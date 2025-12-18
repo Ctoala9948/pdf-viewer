@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Mi Documento PDF</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -15,109 +14,27 @@
         body, html {
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background: #525252;
+            overflow: hidden;
         }
         
-        #pdfContainer {
+        iframe {
             width: 100%;
-            min-height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px 0;
-        }
-        
-        canvas {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            background: white;
-        }
-        
-        #loading {
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div id="loading">Cargando PDF...</div>
-    <div id="pdfContainer"></div>
+    <iframe id="pdfViewer" type="application/pdf"></iframe>
     
     <script>
-        // Configurar PDF.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
         // Obtener el parámetro 'page' de la URL
         const urlParams = new URLSearchParams(window.location.search);
-        const targetPage = parseInt(urlParams.get('page')) || 1;
+        const pageNumber = urlParams.get('page') || '1';
         
-        // Cargar el PDF
-        const pdfPath = './MONITOREO_DE_MATERIAL_PARTICULADO_2.pdf';
-        const container = document.getElementById('pdfContainer');
-        const loading = document.getElementById('loading');
-        
-        pdfjsLib.getDocument(pdfPath).promise.then(pdf => {
-            loading.style.display = 'none';
-            
-            const numPages = pdf.numPages;
-            let targetCanvas = null;
-            
-            // Renderizar todas las páginas en orden
-            const renderPage = (pageNum) => {
-                return pdf.getPage(pageNum).then(page => {
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    
-                    // Ajustar para pantallas de alta resolución
-                    const scale = window.devicePixelRatio || 1;
-                    canvas.width = viewport.width * scale;
-                    canvas.height = viewport.height * scale;
-                    canvas.style.width = viewport.width + 'px';
-                    canvas.style.height = viewport.height + 'px';
-                    canvas.style.marginBottom = '10px';
-                    canvas.dataset.pageNumber = pageNum;
-                    canvas.id = 'page-' + pageNum;
-                    context.scale(scale, scale);
-                    
-                    container.appendChild(canvas);
-                    
-                    // Si es la página objetivo, guardarla
-                    if (pageNum === targetPage) {
-                        targetCanvas = canvas;
-                    }
-                    
-                    return page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise;
-                });
-            };
-            
-            // Renderizar todas las páginas
-            const renderPromises = [];
-            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-                renderPromises.push(renderPage(pageNum));
-            }
-            
-            // Cuando todas las páginas estén renderizadas, ir directo sin transición
-            Promise.all(renderPromises).then(() => {
-                if (targetCanvas) {
-                    setTimeout(() => {
-                        targetCanvas.scrollIntoView({ behavior: 'auto', block: 'start' });
-                    }, 100);
-                }
-            });
-            
-        }).catch(error => {
-            loading.innerHTML = `Error al cargar el PDF. <a href="${pdfPath}" style="color: white;">Descargar PDF</a>`;
-            console.error('Error:', error);
-        });
+        // Establecer la fuente del iframe con la página específica
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.src = `./MONITOREO_DE_MATERIAL_PARTICULADO_2.pdf#page=${pageNumber}`;
     </script>
 </body>
 </html>
