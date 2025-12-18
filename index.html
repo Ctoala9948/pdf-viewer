@@ -25,10 +25,20 @@
     </style>
 </head>
 <body>
-    <iframe src="./MONITOREO_DE_MATERIAL_PARTICULADO_2.pdf#page=3" type="application/pdf">
+    <iframe id="pdfViewer" type="application/pdf">
         <p>Tu navegador no soporta la vista previa de PDFs. 
            <a href="./MONITOREO_DE_MATERIAL_PARTICULADO_2.pdf">Descarga el PDF aquí</a>
         </p>
     </iframe>
+    
+    <script>
+        // Obtener el parámetro 'page' de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageNumber = urlParams.get('page') || '1'; // Por defecto página 1
+        
+        // Establecer la fuente del iframe con la página específica
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.src = `./MONITOREO_DE_MATERIAL_PARTICULADO_2.pdf#page=${pageNumber}`;
+    </script>
 </body>
 </html>
