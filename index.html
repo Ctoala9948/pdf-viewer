@@ -64,30 +64,43 @@
         pdfjsLib.getDocument(pdfPath).promise.then(pdf => {
             loading.style.display = 'none';
             
-            // Renderizar la página específica
-            pdf.getPage(targetPage).then(page => {
-                const viewport = page.getViewport({ scale: 1.5 });
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                
-                // Ajustar para pantallas de alta resolución
-                const scale = window.devicePixelRatio || 1;
-                canvas.width = viewport.width * scale;
-                canvas.height = viewport.height * scale;
-                canvas.style.width = viewport.width + 'px';
-                canvas.style.height = viewport.height + 'px';
-                context.scale(scale, scale);
-                
-                container.appendChild(canvas);
-                
-                page.render({
-                    canvasContext: context,
-                    viewport: viewport
+            const numPages = pdf.numPages;
+            let renderedPages = 0;
+            
+            // Renderizar todas las páginas
+            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                pdf.getPage(pageNum).then(page => {
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    // Ajustar para pantallas de alta resolución
+                    const scale = window.devicePixelRatio || 1;
+                    canvas.width = viewport.width * scale;
+                    canvas.height = viewport.height * scale;
+                    canvas.style.width = viewport.width + 'px';
+                    canvas.style.height = viewport.height + 'px';
+                    canvas.style.marginBottom = '10px';
+                    canvas.dataset.pageNumber = pageNum;
+                    context.scale(scale, scale);
+                    
+                    container.appendChild(canvas);
+                    
+                    page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise.then(() => {
+                        renderedPages++;
+                        
+                        // Cuando se renderice la página objetivo, hacer scroll
+                        if (pageNum === targetPage) {
+                            setTimeout(() => {
+                                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 100);
+                        }
+                    });
                 });
-                
-                // Scroll automático a la página
-                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
+            }
         }).catch(error => {
             loading.innerHTML = `Error al cargar el PDF. <a href="${pdfPath}" style="color: white;">Descargar PDF</a>`;
             console.error('Error:', error);
