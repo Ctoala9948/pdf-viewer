@@ -69,12 +69,33 @@
         body.mobile #loading {
             display: block;
         }
+        
+        #pageIndicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        body.mobile #pageIndicator {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <iframe id="pdfViewer" type="application/pdf"></iframe>
     <div id="loading">Cargando PDF...</div>
     <div id="pdfContainer"></div>
+    <div id="pageIndicator">Página 1 / 1</div>
     
     <script>
         // Detectar si es móvil
@@ -144,12 +165,41 @@
                             targetCanvas.scrollIntoView({ behavior: 'auto', block: 'start' });
                         }, 100);
                     }
+                    
+                    // Actualizar indicador de página
+                    updatePageIndicator(numPages);
                 });
                 
             }).catch(error => {
                 loading.innerHTML = `Error al cargar el PDF. <a href="${pdfPath}" style="color: white;">Descargar PDF</a>`;
                 console.error('Error:', error);
             });
+            
+            // Función para actualizar el indicador de página
+            function updatePageIndicator(totalPages) {
+                const pageIndicator = document.getElementById('pageIndicator');
+                pageIndicator.textContent = `Página ${targetPage} / ${totalPages}`;
+                
+                // Detectar en qué página está el usuario al hacer scroll
+                window.addEventListener('scroll', () => {
+                    const canvases = document.querySelectorAll('canvas');
+                    let currentPage = 1;
+                    
+                    const scrollPosition = window.scrollY + window.innerHeight / 2;
+                    
+                    canvases.forEach((canvas) => {
+                        const rect = canvas.getBoundingClientRect();
+                        const canvasTop = rect.top + window.scrollY;
+                        const canvasBottom = canvasTop + rect.height;
+                        
+                        if (scrollPosition >= canvasTop && scrollPosition <= canvasBottom) {
+                            currentPage = parseInt(canvas.dataset.pageNumber);
+                        }
+                    });
+                    
+                    pageIndicator.textContent = `Página ${currentPage} / ${totalPages}`;
+                });
+            }
             
         } else {
             // DESKTOP: Usar visor nativo
