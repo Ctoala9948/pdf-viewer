@@ -65,54 +65,30 @@
             loading.style.display = 'none';
             
             const numPages = pdf.numPages;
-            let renderedPages = 0;
-            let targetCanvas = null;
             
-            // Renderizar todas las páginas en orden
-            const renderPage = (pageNum) => {
-                return pdf.getPage(pageNum).then(page => {
-                    const viewport = page.getViewport({ scale: 1.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    
-                    // Ajustar para pantallas de alta resolución
-                    const scale = window.devicePixelRatio || 1;
-                    canvas.width = viewport.width * scale;
-                    canvas.height = viewport.height * scale;
-                    canvas.style.width = viewport.width + 'px';
-                    canvas.style.height = viewport.height + 'px';
-                    canvas.style.marginBottom = '10px';
-                    canvas.dataset.pageNumber = pageNum;
-                    canvas.id = 'page-' + pageNum;
-                    context.scale(scale, scale);
-                    
-                    container.appendChild(canvas);
-                    
-                    // Si es la página objetivo, guardarla
-                    if (pageNum === targetPage) {
-                        targetCanvas = canvas;
-                    }
-                    
-                    return page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise;
+            // Validar que la página solicitada existe
+            const pageToShow = (targetPage > 0 && targetPage <= numPages) ? targetPage : 1;
+            
+            // Renderizar solo la página específica
+            pdf.getPage(pageToShow).then(page => {
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Ajustar para pantallas de alta resolución
+                const scale = window.devicePixelRatio || 1;
+                canvas.width = viewport.width * scale;
+                canvas.height = viewport.height * scale;
+                canvas.style.width = viewport.width + 'px';
+                canvas.style.height = viewport.height + 'px';
+                context.scale(scale, scale);
+                
+                container.appendChild(canvas);
+                
+                page.render({
+                    canvasContext: context,
+                    viewport: viewport
                 });
-            };
-            
-            // Renderizar todas las páginas
-            const renderPromises = [];
-            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-                renderPromises.push(renderPage(pageNum));
-            }
-            
-            // Cuando todas las páginas estén renderizadas, hacer scroll
-            Promise.all(renderPromises).then(() => {
-                if (targetCanvas) {
-                    setTimeout(() => {
-                        targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300);
-                }
             });
             
         }).catch(error => {
