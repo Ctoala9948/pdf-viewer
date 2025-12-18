@@ -66,10 +66,11 @@
             
             const numPages = pdf.numPages;
             let renderedPages = 0;
+            let targetCanvas = null;
             
-            // Renderizar todas las páginas
-            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-                pdf.getPage(pageNum).then(page => {
+            // Renderizar todas las páginas en orden
+            const renderPage = (pageNum) => {
+                return pdf.getPage(pageNum).then(page => {
                     const viewport = page.getViewport({ scale: 1.5 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
@@ -82,25 +83,38 @@
                     canvas.style.height = viewport.height + 'px';
                     canvas.style.marginBottom = '10px';
                     canvas.dataset.pageNumber = pageNum;
+                    canvas.id = 'page-' + pageNum;
                     context.scale(scale, scale);
                     
                     container.appendChild(canvas);
                     
-                    page.render({
+                    // Si es la página objetivo, guardarla
+                    if (pageNum === targetPage) {
+                        targetCanvas = canvas;
+                    }
+                    
+                    return page.render({
                         canvasContext: context,
                         viewport: viewport
-                    }).promise.then(() => {
-                        renderedPages++;
-                        
-                        // Cuando se renderice la página objetivo, hacer scroll
-                        if (pageNum === targetPage) {
-                            setTimeout(() => {
-                                canvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }, 100);
-                        }
-                    });
+                    }).promise;
                 });
+            };
+            
+            // Renderizar todas las páginas
+            const renderPromises = [];
+            for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                renderPromises.push(renderPage(pageNum));
             }
+            
+            // Cuando todas las páginas estén renderizadas, hacer scroll
+            Promise.all(renderPromises).then(() => {
+                if (targetCanvas) {
+                    setTimeout(() => {
+                        targetCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
+                }
+            });
+            
         }).catch(error => {
             loading.innerHTML = `Error al cargar el PDF. <a href="${pdfPath}" style="color: white;">Descargar PDF</a>`;
             console.error('Error:', error);
